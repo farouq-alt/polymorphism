@@ -3,31 +3,48 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreCommentRequest;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class CommentController extends Controller
 {
-    public function store(Request $request)
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreCommentRequest $request)
     {
         Gate::authorize('create', Comment::class);
 
-        $validated = $request->validate([
-            'content' => 'required',
-            'commentable_id' => 'required|integer',
-            'commentable_type' => 'required|string',
-        ]);
+        // Récupérer les données validées
+        $validated = $request->validated();
+        $validated['user_id'] = auth()->id();
 
-        $comment = $request->user()->comments()->create($validated);
+        // Gérer l'upload de l'image (optionnel pour les commentaires)
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('comments', 'public');
+        }
 
-        return back()->with('success', 'Commentaire ajouté!');
+        // Créer le commentaire
+        $comment = Comment::create($validated);
+
+        return back()->with('success', 'Commentaire ajouté avec succès!');
     }
 
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy(Comment $comment)
     {
         Gate::authorize('delete', $comment);
+
+        // Supprimer l'image si elle existe
+        if ($comment->image) {
+            Storage::disk('public')->delete($comment->image);
+        }
+
         $comment->delete();
 
-        return back()->with('success', 'Commentaire supprimé!');
+        return back()->with('success', 'Commentaire supprimé avec succès!');
     }
 }

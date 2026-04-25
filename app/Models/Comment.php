@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Comment extends Model
 {
-    protected $fillable = ['user_id', 'commentable_id', 'commentable_type', 'content'];
+    protected $fillable = ['user_id', 'commentable_id', 'commentable_type', 'content', 'image'];
 
     public function user(): BelongsTo
     {
